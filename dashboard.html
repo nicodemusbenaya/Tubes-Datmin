@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spotify Analyzer ★</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/* ── Variables ───────────────────────────────────────────────── */
+:root {
+  --y:   #FFE500;   /* yellow  */
+  --g:   #00C850;   /* green   */
+  --pk:  #FF00AA;   /* pink    */
+  --bl:  #00B4FF;   /* blue    */
+  --or:  #FF6B00;   /* orange  */
+  --pu:  #9B00FF;   /* purple  */
+  --rd:  #FF2D2D;   /* red     */
+  --bk:  #0A0A0A;   /* black   */
+  --wh:  #FFFFFF;
+  --border:  3px solid #0A0A0A;
+  --borderB: 4px solid #0A0A0A;
+  --r:   16px;
+  --rL:  24px;
+  --sh:  5px 5px 0 #0A0A0A;
+  --shL: 8px 8px 0 #0A0A0A;
+}
+/* ── Reset ───────────────────────────────────────────────────── */
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{font-family:'Nunito',sans-serif;background:var(--y);color:var(--bk);overflow-x:hidden;}
+
+/* ── Ticker ──────────────────────────────────────────────────── */
+.ticker{background:var(--bk);color:var(--y);padding:8px 0;overflow:hidden;white-space:nowrap;border-bottom:var(--border);}
+.ticker-inner{display:inline-block;animation:tick 28s linear infinite;font-weight:800;font-size:.85rem;letter-spacing:1px;}
+@keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* ── Navbar ──────────────────────────────────────────────────── */
+nav{position:sticky;top:0;z-index:100;background:var(--bk);border-bottom:var(--borderB);
+    padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:62px;}
+.nav-logo{font-family:'Fredoka One',cursive;font-size:1.35rem;color:var(--y);text-decoration:none;}
+.nav-logo em{color:var(--g);font-style:normal;}
+.nav-links{display:flex;gap:.4rem;list-style:none;}
+.nav-links a{font-size:.82rem;font-weight:800;color:var(--wh);text-decoration:none;
+             padding:6px 14px;border-radius:50px;border:2px solid transparent;transition:all .15s;}
+.nav-links a:hover{background:var(--y);color:var(--bk);border-color:var(--y);}
+
+/* ── Hero ────────────────────────────────────────────────────── */
+#hero{min-height:calc(100vh - 62px);background:var(--y);padding:3rem 2rem 4rem;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      position:relative;overflow:hidden;border-bottom:var(--borderB);}
+.star-field{position:absolute;inset:0;pointer-events:none;}
+.s{position:absolute;animation:fsv 4s ease-in-out infinite;}
+@keyframes fsv{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-18px) rotate(18deg)}}
+
+.badge-hero{font-size:.75rem;font-weight:800;letter-spacing:3px;text-transform:uppercase;
+            background:var(--bk);color:var(--y);padding:6px 18px;border-radius:50px;
+            margin-bottom:1.25rem;display:inline-block;border:3px solid var(--bk);}
+
+h1.hero-title{font-family:'Fredoka One',cursive;font-size:clamp(3.2rem,11vw,8rem);
+              line-height:.95;text-align:center;letter-spacing:-2px;margin-bottom:1rem;position:relative;z-index:2;}
+h1.hero-title .c1{color:var(--g);}
+h1.hero-title .c2{color:var(--pk);}
+h1.hero-title .c3{color:var(--bk);}
+
+.hero-sub{font-size:1rem;font-weight:600;text-align:center;max-width:520px;
+          margin-bottom:2.5rem;opacity:.75;line-height:1.6;}
+
+/* Stats row */
+.stat-row{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;margin-bottom:2.5rem;}
+.stat-box{background:var(--wh);border:var(--borderB);border-radius:var(--r);
+          padding:.9rem 1.4rem;text-align:center;box-shadow:var(--sh);min-width:100px;
+          transition:transform .15s,box-shadow .15s;cursor:default;}
+.stat-box:hover{transform:translate(-2px,-2px);box-shadow:var(--shL);}
+.stat-box .n{font-family:'Fredoka One',cursive;font-size:2rem;color:var(--g);display:block;}
+.stat-box .l{font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;opacity:.65;}
+
+.cta-row{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;}
+.btn{font-family:'Nunito',sans-serif;font-size:.95rem;font-weight:800;padding:12px 28px;
+     border-radius:50px;border:var(--borderB);cursor:pointer;text-decoration:none;
+     transition:all .15s;box-shadow:var(--sh);display:inline-block;}
+.btn:hover{transform:translate(-2px,-2px);box-shadow:var(--shL);}
+.btn-g{background:var(--g);color:var(--bk);}
+.btn-bk{background:var(--bk);color:var(--y);}
+.btn-pk{background:var(--pk);color:var(--wh);}
+
+/* ── Section commons ─────────────────────────────────────────── */
+section{padding:5rem 2rem;border-top:var(--borderB);}
+.wrap{max-width:1100px;margin:0 auto;}
+.sec-tag{display:inline-block;font-size:.72rem;font-weight:800;letter-spacing:3px;text-transform:uppercase;
+         padding:4px 14px;border-radius:50px;border:2.5px solid var(--bk);margin-bottom:.85rem;}
+h2.sec-title{font-family:'Fredoka One',cursive;font-size:clamp(2rem,5vw,3.5rem);
+             line-height:1.05;margin-bottom:.4rem;}
+p.sec-desc{font-size:.95rem;font-weight:600;opacity:.65;max-width:600px;margin-bottom:2.5rem;line-height:1.6;}
+
+.g2{display:grid;grid-template-columns:repeat(2,1fr);gap:1.5rem;}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem;}
+
+.card{background:var(--wh);border:var(--borderB);border-radius:var(--rL);padding:1.5rem;
+      box-shadow:var(--sh);transition:transform .15s,box-shadow .15s;}
+.card:hover{transform:translate(-2px,-2px);box-shadow:var(--shL);}
+
+/* ── DATASET section ─────────────────────────────────────────── */
+#data{background:var(--bk);}
+.dc{border:3px solid rgba(255,255,255,.12);border-radius:var(--rL);padding:1.5rem;
+    transition:all .2s;position:relative;overflow:hidden;}
+.dc:hover{border-color:var(--y);transform:translateY(-4px);}
+.dc-icon{font-size:2rem;margin-bottom:.75rem;display:block;}
+.dc-title{font-family:'Fredoka One',cursive;font-size:1.25rem;color:var(--y);margin-bottom:.5rem;}
+.dc-text{font-size:.875rem;color:rgba(255,255,255,.65);line-height:1.65;}
+.pill{display:inline-block;font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:50px;margin:3px;}
+.p-g{background:var(--g);color:var(--bk);}
+.p-pk{background:var(--pk);color:var(--wh);}
+.p-bl{background:var(--bl);color:var(--bk);}
+.p-or{background:var(--or);color:var(--wh);}
+.p-y{background:var(--y);color:var(--bk);}
+.p-pu{background:var(--pu);color:var(--wh);}
+
+/* ── GENRE section ───────────────────────────────────────────── */
+#genres{background:var(--g);}
+.genre-layout{display:grid;grid-template-columns:1fr 400px;gap:2.5rem;align-items:center;}
+.genre-pills{display:flex;flex-wrap:wrap;gap:.65rem;margin-bottom:1.5rem;}
+.gp{font-weight:800;font-size:.88rem;padding:8px 18px;border-radius:50px;
+    border:3px solid var(--bk);box-shadow:3px 3px 0 var(--bk);cursor:default;
+    transition:all .15s;}
+.gp:hover{transform:translate(-2px,-2px);box-shadow:5px 5px 0 var(--bk);}
+.chart-wrap{background:var(--wh);border:var(--borderB);border-radius:var(--rL);
+            padding:1.5rem;box-shadow:var(--shL);}
+
+/* ── MODEL 1 section ─────────────────────────────────────────── */
+#model1{background:var(--wh);}
+.metric-card{background:var(--wh);border:var(--borderB);border-radius:var(--rL);
+             padding:1.5rem;text-align:center;box-shadow:var(--sh);transition:all .15s;}
+.metric-card:hover{transform:translate(-3px,-3px);box-shadow:var(--shL);}
+.mv{font-family:'Fredoka One',cursive;font-size:3rem;line-height:1;margin-bottom:.2rem;}
+.ml{font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:2px;opacity:.55;}
+.mbar{height:7px;background:#eee;border-radius:4px;margin-top:.75rem;overflow:hidden;}
+.mbar-f{height:100%;border-radius:4px;width:0;transition:width 1.4s cubic-bezier(.34,1.56,.64,1);}
+
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:2rem;}
+.cm-wrap{display:flex;flex-direction:column;align-items:center;}
+.cm-label-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;text-align:center;
+              font-size:.6rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;
+              color:var(--bk);opacity:.5;margin-bottom:4px;padding-left:0;}
+.cm-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;max-width:300px;}
+.cm-cell{border-radius:12px;padding:.85rem .5rem;text-align:center;border:3px solid var(--bk);}
+.cm-v{font-family:'Fredoka One',cursive;font-size:2rem;}
+.cm-l{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;opacity:.65;}
+
+/* ── MODEL 2 section ─────────────────────────────────────────── */
+#model2{background:var(--bl);}
+.rc{border:var(--borderB);border-radius:var(--rL);padding:1.5rem;box-shadow:var(--shL);}
+.rc-rf{background:var(--y);}
+.rc-lgbm{background:#FFB3E6;}
+.rc-name{font-family:'Fredoka One',cursive;font-size:1.4rem;margin-bottom:1rem;}
+.rm-row{display:flex;justify-content:space-between;align-items:center;
+        padding:.45rem 0;border-bottom:2px dashed rgba(0,0,0,.12);}
+.rm-row:last-child{border-bottom:none;}
+.rm-k{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;}
+.rm-v{font-family:'Fredoka One',cursive;font-size:1.25rem;}
+
+/* ── PREDICTION section ──────────────────────────────────────── */
+#prediksi{background:var(--y);}
+.predict-layout{display:grid;grid-template-columns:1.2fr 1fr;gap:2rem;align-items:start;}
+.pform{background:var(--wh);border:var(--borderB);border-radius:var(--rL);
+       padding:2rem;box-shadow:var(--shL);}
+.fs-tag{font-family:'Fredoka One',cursive;font-size:.95rem;background:var(--y);
+        display:inline-block;padding:3px 12px;border-radius:50px;border:2px solid var(--bk);
+        margin-bottom:1rem;}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.fg{margin-bottom:.85rem;}
+.fg label{display:block;font-size:.75rem;font-weight:800;text-transform:uppercase;
+          letter-spacing:1px;margin-bottom:.35rem;}
+.fg input[type=range]{width:100%;accent-color:var(--g);margin-top:2px;}
+.rv{font-size:.85rem;font-weight:700;color:var(--g);text-align:right;display:block;margin-top:1px;}
+.fg input[type=number],.fg select{
+  width:100%;padding:8px 10px;border:3px solid var(--bk);border-radius:10px;
+  font-family:'Nunito',sans-serif;font-size:.88rem;font-weight:700;background:var(--wh);}
+.fg input[type=number]:focus,.fg select:focus{outline:none;border-color:var(--g);}
+.gchk-wrap{display:flex;flex-wrap:wrap;gap:.45rem;}
+.gcl{display:flex;align-items:center;gap:5px;font-size:.78rem;font-weight:700;
+     padding:5px 12px;border:2px solid var(--bk);border-radius:50px;cursor:pointer;
+     transition:all .15s;background:var(--wh);user-select:none;}
+.gcl.active{background:var(--g);}
+.gcl input{display:none;}
+
+/* Result card */
+.rcard{background:var(--bk);border:var(--borderB);border-radius:var(--rL);
+       padding:2rem;box-shadow:var(--shL);color:var(--wh);position:sticky;top:80px;}
+.rtitle{font-family:'Fredoka One',cursive;font-size:1.15rem;color:var(--y);
+        margin-bottom:1.25rem;}
+.rcat{text-align:center;padding:1.25rem;border-radius:var(--r);margin-bottom:1rem;
+      border:2.5px solid rgba(255,255,255,.15);transition:all .35s;}
+.rcat-emoji{font-size:2.75rem;display:block;margin-bottom:.35rem;}
+.rcat-lbl{font-family:'Fredoka One',cursive;font-size:1.9rem;}
+.rcat-sub{font-size:.8rem;opacity:.6;margin-top:.2rem;}
+.cat-high{background:rgba(0,200,80,.18);}
+.cat-low{background:rgba(255,0,170,.18);}
+.pbar-wrap{margin-bottom:1.5rem;}
+.pbar-labels{display:flex;justify-content:space-between;font-size:.75rem;
+             font-weight:700;margin-bottom:5px;}
+.pbar-track{height:12px;background:rgba(255,255,255,.12);border-radius:6px;overflow:hidden;}
+.pbar-fill{height:100%;border-radius:6px;
+           background:linear-gradient(90deg,var(--g),var(--bl));
+           width:0;transition:width .8s cubic-bezier(.34,1.56,.64,1);}
+.snum-box{text-align:center;padding:1.1rem;background:rgba(255,229,0,.08);
+          border:2px solid rgba(255,229,0,.25);border-radius:var(--r);}
+.snum{font-family:'Fredoka One',cursive;font-size:2rem;color:var(--y);display:block;}
+.slbl{font-size:.7rem;opacity:.5;text-transform:uppercase;letter-spacing:2px;}
+.note{font-size:.72rem;opacity:.45;line-height:1.6;margin-top:1.25rem;padding:.75rem;
+      background:rgba(255,255,255,.06);border-radius:10px;}
+
+/* ── Footer ──────────────────────────────────────────────────── */
+footer{background:var(--bk);color:var(--wh);padding:3rem 2rem;
+       text-align:center;border-top:var(--borderB);}
+.foot-logo{font-family:'Fredoka One',cursive;font-size:2.25rem;color:var(--y);}
+.foot-logo em{color:var(--g);font-style:normal;}
+
+/* ── Fade-up animation ───────────────────────────────────────── */
+.fu{opacity:0;transform:translateY(28px);transition:opacity .55s ease,transform .55s ease;}
+.fu.vis{opacity:1;transform:translateY(0);}
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media(max-width:900px){
+  .g3,.g4{grid-template-columns:repeat(2,1fr);}
+  .genre-layout{grid-template-columns:1fr;}
+  .chart-wrap{max-width:380px;margin:0 auto;}
+}
+@media(max-width:680px){
+  .g2,.g3,.g4,.charts-row,.predict-layout,.rc-wrap{grid-template-columns:1fr!important;}
+  .frow{grid-template-columns:1fr;}
+  .nav-links{display:none;}
+  .rcard{position:static;}
+}
+</style>
+</head>
+<body>
+
+<!-- ★ Ticker ────────────────────────────────────────────────── -->
+<div class="ticker">
+  <span class="ticker-inner">
+    ★ SPOTIFY DATA ANALYZER &nbsp;★ LOGISTIC REGRESSION &nbsp;★ RANDOM FOREST &nbsp;★ LIGHTGBM &nbsp;
+    ★ 1,556 LAGU &nbsp;★ ACCURACY 71% &nbsp;★ R² 0.91 &nbsp;★ TOP 10 GENRE &nbsp;★ AUDIO FEATURES &nbsp;
+    ★ SPOTIFY DATA ANALYZER &nbsp;★ LOGISTIC REGRESSION &nbsp;★ RANDOM FOREST &nbsp;★ LIGHTGBM &nbsp;
+    ★ 1,556 LAGU &nbsp;★ ACCURACY 71% &nbsp;★ R² 0.91 &nbsp;★ TOP 10 GENRE &nbsp;★ AUDIO FEATURES &nbsp;
+  </span>
+</div>
+
+<!-- ★ Navbar ────────────────────────────────────────────────── -->
+<nav>
+  <a class="nav-logo" href="#hero">♫ Spotify <em>Analyzer</em></a>
+  <ul class="nav-links">
+    <li><a href="#data">Dataset</a></li>
+    <li><a href="#genres">Genre</a></li>
+    <li><a href="#model1">Klasifikasi</a></li>
+    <li><a href="#model2">Regresi</a></li>
+    <li><a href="#prediksi">Prediksi</a></li>
+  </ul>
+</nav>
+
+<!-- ★ Hero ──────────────────────────────────────────────────── -->
+<section id="hero">
+  <div class="star-field" id="starField"></div>
+
+  <div class="badge-hero">★ Data Mining Project ★</div>
+  <h1 class="hero-title">
+    <span class="c3">Analisis</span><br>
+    <span class="c1">Spotify</span><br>
+    <span class="c2">Dataset</span>
+  </h1>
+  <p class="hero-sub">
+    Memprediksi <strong>popularitas lagu</strong> & estimasi <strong>streams</strong>
+    menggunakan Logistic Regression, Random Forest, dan LightGBM.
+  </p>
+
+  <div class="stat-row">
+    <div class="stat-box">
+      <span class="n">1,556</span><span class="l">Lagu</span>
+    </div>
+    <div class="stat-box">
+      <span class="n">10</span><span class="l">Top Genre</span>
+    </div>
+    <div class="stat-box">
+      <span class="n" style="color:var(--pk)">3</span><span class="l">Model ML</span>
+    </div>
+    <div class="stat-box">
+      <span class="n" style="color:var(--bl)">71%</span><span class="l">Accuracy</span>
+    </div>
+    <div class="stat-box">
+      <span class="n" style="color:var(--or)">0.91</span><span class="l">Best R²</span>
+    </div>
+  </div>
+
+  <div class="cta-row">
+    <a href="#model1" class="btn btn-g">★ Lihat Model</a>
+    <a href="#prediksi" class="btn btn-bk">Coba Prediksi →</a>
+  </div>
+</section>
+
+<!-- ★ Dataset ────────────────────────────────────────────────── -->
+<section id="data">
+  <div class="wrap">
+    <span class="sec-tag" style="background:var(--g);color:var(--bk)">Dataset</span>
+    <h2 class="sec-title" style="color:var(--y)">Tentang Data</h2>
+    <p class="sec-desc" style="color:rgba(255,255,255,.65)">
+      Spotify Top 200 Chart — 1,556 lagu dengan audio features, metadata artis, dan metrik charting.
+    </p>
+
+    <div class="g3">
+      <div class="dc fu">
+        <span class="dc-icon">🎵</span>
+        <div class="dc-title">Audio Features</div>
+        <div class="dc-text">
+          Fitur langsung dari Spotify API. Sebelumnya tersimpan sebagai <code style="color:var(--y)">object</code> — kini dikonversi ke numerik.
+        </div>
+        <div style="margin-top:.9rem">
+          <span class="pill p-g">Danceability</span>
+          <span class="pill p-bl">Energy</span>
+          <span class="pill p-or">Loudness</span>
+          <span class="pill p-pk">Tempo</span>
+          <span class="pill p-y">Valence</span>
+          <span class="pill p-g">Liveness</span>
+          <span class="pill p-pu">Speechiness</span>
+          <span class="pill p-bl">Acousticness</span>
+        </div>
+      </div>
+
+      <div class="dc fu" style="animation-delay:.1s">
+        <span class="dc-icon">📈</span>
+        <div class="dc-title">Metrik Chart & Artis</div>
+        <div class="dc-text">
+          Data posisi dan frekuensi charting sebagai indikator traction lagu di platform global.
+        </div>
+        <div style="margin-top:.9rem">
+          <span class="pill p-pk">Highest Position</span>
+          <span class="pill p-bl">Times Charted</span>
+          <span class="pill p-g">Streams</span>
+          <span class="pill p-or">Popularity</span>
+          <span class="pill p-y">Artist Followers</span>
+          <span class="pill p-pu">Release Date</span>
+        </div>
+      </div>
+
+      <div class="dc fu" style="animation-delay:.2s">
+        <span class="dc-icon">🔧</span>
+        <div class="dc-title">Pipeline Perbaikan</div>
+        <div class="dc-text">
+          Semua bug utama diselesaikan sebelum modelling.
+        </div>
+        <div style="margin-top:.9rem;display:flex;flex-direction:column;gap:6px">
+          <div style="padding:6px 10px;border-radius:8px;border:2px solid rgba(255,255,255,.15);font-size:.78rem;color:var(--wh)">
+            ✅ Genre: <code style="color:var(--y)">ast.literal_eval</code> + binary flags
+          </div>
+          <div style="padding:6px 10px;border-radius:8px;border:2px solid rgba(255,255,255,.15);font-size:.78rem;color:var(--wh)">
+            ✅ FutureWarning pandas <code style="color:var(--y)">inplace</code> diperbaiki
+          </div>
+          <div style="padding:6px 10px;border-radius:8px;border:2px solid rgba(255,255,255,.15);font-size:.78rem;color:var(--wh)">
+            ✅ Regresi punya split sendiri (bug kritis)
+          </div>
+          <div style="padding:6px 10px;border-radius:8px;border:2px solid rgba(255,255,255,.15);font-size:.78rem;color:var(--wh)">
+            ✅ StandardScaler ditambahkan
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ★ Genre ──────────────────────────────────────────────────── -->
+<section id="genres">
+  <div class="wrap">
+    <span class="sec-tag" style="background:var(--y)">Genre</span>
+    <h2 class="sec-title">Top 10 Genre</h2>
+    <p class="sec-desc">
+      Genre di-parse dengan <code>ast.literal_eval</code> lalu di-encode sebagai binary flag.
+      Perbaikan dari <code>pd.get_dummies</code> yang menghasilkan 130 kolom salah.
+    </p>
+
+    <div class="genre-layout">
+      <div>
+        <div class="genre-pills">
+          <span class="gp" style="background:var(--pk);color:var(--wh)">🎵 pop</span>
+          <span class="gp" style="background:var(--y);color:var(--bk)">🎤 rap</span>
+          <span class="gp" style="background:var(--bl);color:var(--bk)">💃 dance pop</span>
+          <span class="gp" style="background:var(--or);color:var(--wh)">✨ post-teen pop</span>
+          <span class="gp" style="background:var(--pu);color:var(--wh)">🎧 pop rap</span>
+          <span class="gp" style="background:var(--wh);color:var(--bk)">🔥 trap</span>
+          <span class="gp" style="background:var(--g);color:var(--bk)">🌴 reggaeton</span>
+          <span class="gp" style="background:var(--rd);color:var(--wh)">🎶 trap latino</span>
+          <span class="gp" style="background:var(--y);color:var(--bk)">🎸 latin</span>
+          <span class="gp" style="background:var(--bk);color:var(--y)">🎙️ hip hop</span>
+        </div>
+        <div style="background:rgba(0,0,0,.15);border-radius:var(--r);padding:1.1rem;
+                    border:2px solid rgba(0,0,0,.2);font-size:.85rem;font-weight:600;line-height:1.7">
+          💡 <strong>Encoding lama:</strong> <code>pd.get_dummies(df['Genre'])</code> langsung pada string list
+          → 130 kolom dengan nama seperti <code>Genre_['pop', 'dance pop']</code> (tidak berguna).<br>
+          <strong>Encoding baru:</strong> parse tiap genre individual → 10 binary columns bersih.
+        </div>
+      </div>
+
+      <div class="chart-wrap fu">
+        <canvas id="genreChart"></canvas>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ★ Model 1: Klasifikasi ───────────────────────────────────── -->
+<section id="model1">
+  <div class="wrap">
+    <span class="sec-tag" style="background:var(--pk);color:var(--wh)">Part 1</span>
+    <h2 class="sec-title">Klasifikasi Popularitas</h2>
+    <p class="sec-desc">
+      Logistic Regression + StandardScaler untuk memprediksi apakah lagu masuk kategori
+      <strong>High</strong> atau <strong>Low</strong> Popularity.
+      Akurasi naik dari <strong style="color:var(--rd)">53%</strong> →
+      <strong style="color:var(--g)">71%</strong> setelah menambahkan audio features.
+    </p>
+
+    <!-- Metric cards -->
+    <div class="g4 fu">
+      <div class="metric-card" style="background:var(--y)">
+        <div class="mv">71%</div>
+        <div class="ml">Accuracy</div>
+        <div class="mbar"><div class="mbar-f" style="background:var(--bk)" data-w="71"></div></div>
+      </div>
+      <div class="metric-card" style="background:var(--g)">
+        <div class="mv" style="color:var(--wh)">73%</div>
+        <div class="ml" style="color:rgba(255,255,255,.6)">Precision</div>
+        <div class="mbar"><div class="mbar-f" style="background:var(--wh)" data-w="73"></div></div>
+      </div>
+      <div class="metric-card" style="background:var(--pk)">
+        <div class="mv" style="color:var(--wh)">74%</div>
+        <div class="ml" style="color:rgba(255,255,255,.6)">Recall</div>
+        <div class="mbar"><div class="mbar-f" style="background:var(--wh)" data-w="74"></div></div>
+      </div>
+      <div class="metric-card" style="background:var(--bl)">
+        <div class="mv">0.79</div>
+        <div class="ml">ROC-AUC</div>
+        <div class="mbar"><div class="mbar-f" style="background:var(--bk)" data-w="79"></div></div>
+      </div>
+    </div>
+
+    <!-- ROC + CM -->
+    <div class="charts-row">
+      <div class="card fu">
+        <h3 style="font-family:'Fredoka One',cursive;font-size:1.15rem;margin-bottom:1rem">
+          ROC-AUC Curve
+        </h3>
+        <canvas id="rocChart" height="190"></canvas>
+        <p style="font-size:.78rem;opacity:.5;margin-top:.6rem;text-align:center">
+          AUC = 0.79 — jauh di atas baseline random (0.50)
+        </p>
+      </div>
+
+      <div class="card fu">
+        <h3 style="font-family:'Fredoka One',cursive;font-size:1.15rem;margin-bottom:1rem">
+          Confusion Matrix
+        </h3>
+        <div class="cm-wrap">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;width:100%;
+                      max-width:300px;margin-bottom:4px;text-align:center;
+                      font-size:.62rem;font-weight:800;opacity:.5;letter-spacing:.5px">
+            <span>PRED: LOW</span><span>PRED: HIGH</span>
+          </div>
+          <div class="cm-grid">
+            <div class="cm-cell" style="background:#d4edda">
+              <div class="cm-v" style="color:#155724">189</div>
+              <div class="cm-l">True Negative</div>
+            </div>
+            <div class="cm-cell" style="background:#fff3cd">
+              <div class="cm-v" style="color:#856404">73</div>
+              <div class="cm-l">False Positive</div>
+            </div>
+            <div class="cm-cell" style="background:#fff3cd">
+              <div class="cm-v" style="color:#856404">64</div>
+              <div class="cm-l">False Negative</div>
+            </div>
+            <div class="cm-cell" style="background:#cce5ff">
+              <div class="cm-v" style="color:#004085">186</div>
+              <div class="cm-l">True Positive</div>
+            </div>
+          </div>
+          <p style="font-size:.68rem;opacity:.4;margin-top:.75rem">Aktual ↓ | Prediksi →</p>
+        </div>
+        <div style="margin-top:1rem;padding:.75rem;background:var(--y);
+                    border-radius:10px;border:2px solid var(--bk);font-size:.82rem;font-weight:700">
+          🔧 F1-Score: <strong>0.73</strong> — balanced antara Precision & Recall
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ★ Model 2: Regresi ───────────────────────────────────────── -->
+<section id="model2">
+  <div class="wrap">
+    <span class="sec-tag" style="background:var(--bk);color:var(--y)">Part 2</span>
+    <h2 class="sec-title" style="color:var(--wh)">Regresi Streams</h2>
+    <p class="sec-desc" style="color:rgba(255,255,255,.75)">
+      Memprediksi jumlah Streams menggunakan Random Forest (tuned GridSearchCV) dan LightGBM.
+      Target di-<code>log1p</code> transform untuk menangani distribusi yang sangat skewed.
+    </p>
+
+    <div class="g2 fu rc-wrap" style="margin-bottom:1.5rem">
+      <div class="rc rc-rf">
+        <div class="rc-name">🌲 Random Forest</div>
+        <div class="rm-row"><span class="rm-k">R² Score</span>
+          <span class="rm-v" style="color:#009A3E">0.9106</span></div>
+        <div class="rm-row"><span class="rm-k">MAE</span>
+          <span class="rm-v">927,862</span></div>
+        <div class="rm-row"><span class="rm-k">RMSE</span>
+          <span class="rm-v">1,299,177</span></div>
+        <div class="rm-row"><span class="rm-k">Median Error</span>
+          <span class="rm-v">7.05%</span></div>
+        <div style="margin-top:1rem;background:var(--g);border-radius:8px;
+                    border:2px solid var(--bk);text-align:center;padding:7px;
+                    font-weight:800;font-size:.88rem">
+          🏆 Model Terbaik
+        </div>
+      </div>
+
+      <div class="rc rc-lgbm">
+        <div class="rc-name">⚡ LightGBM</div>
+        <div class="rm-row"><span class="rm-k">R² Score</span>
+          <span class="rm-v" style="color:#007FCC">0.8624</span></div>
+        <div class="rm-row"><span class="rm-k">MAE</span>
+          <span class="rm-v">1,103,398</span></div>
+        <div class="rm-row"><span class="rm-k">RMSE</span>
+          <span class="rm-v">1,611,653</span></div>
+        <div class="rm-row"><span class="rm-k">Median Error</span>
+          <span class="rm-v">9.87%</span></div>
+      </div>
+    </div>
+
+    <div class="card fu" style="background:rgba(255,255,255,.96)">
+      <h3 style="font-family:'Fredoka One',cursive;font-size:1.15rem;margin-bottom:1rem">
+        Perbandingan Performa Model
+      </h3>
+      <canvas id="regChart" height="110"></canvas>
+      <p style="font-size:.78rem;opacity:.55;margin-top:.75rem">
+        💡 <strong>Bug diperbaiki:</strong> versi lama menggunakan X_train/y_train dari task klasifikasi
+        (label biner 0/1) untuk melatih model regresi — menyebabkan model dilatih dengan target yang sepenuhnya salah.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ★ Prediksi ───────────────────────────────────────────────── -->
+<section id="prediksi">
+  <div class="wrap">
+    <span class="sec-tag" style="background:var(--pu);color:var(--wh)">Interaktif</span>
+    <h2 class="sec-title">Coba Prediksi</h2>
+    <p class="sec-desc">
+      Masukkan fitur lagu dan lihat prediksi popularitas serta estimasi streams.
+    </p>
+
+    <div class="predict-layout">
+      <!-- Form -->
+      <div class="pform">
+        <!-- Chart Metrics -->
+        <div style="margin-bottom:1.25rem">
+          <div class="fs-tag">📊 Metrik Chart</div>
+          <div class="frow">
+            <div class="fg">
+              <label>Posisi Chart Tertinggi</label>
+              <input type="range" id="chartPos" min="1" max="200" value="50">
+              <span class="rv" id="chartPosV">50</span>
+            </div>
+            <div class="fg">
+              <label>Kali Charted</label>
+              <input type="range" id="timesC" min="1" max="142" value="10">
+              <span class="rv" id="timesCv">10</span>
+            </div>
+          </div>
+          <div class="frow">
+            <div class="fg">
+              <label>Artist Followers</label>
+              <input type="number" id="followers" value="10000000" min="0" step="1000000">
+            </div>
+            <div class="fg">
+              <label>Tahun Rilis</label>
+              <select id="relYear">
+                <option>2024</option><option>2023</option>
+                <option selected>2022</option><option>2021</option>
+                <option>2020</option><option>2019</option>
+                <option>2018</option><option>2017</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Audio -->
+        <div style="margin-bottom:1.25rem">
+          <div class="fs-tag">🎵 Audio Features</div>
+          <div class="frow">
+            <div class="fg">
+              <label>Danceability (0–1)</label>
+              <input type="range" id="dance" min="0" max="1" step=".01" value=".7">
+              <span class="rv" id="danceV">0.70</span>
+            </div>
+            <div class="fg">
+              <label>Energy (0–1)</label>
+              <input type="range" id="energy" min="0" max="1" step=".01" value=".7">
+              <span class="rv" id="energyV">0.70</span>
+            </div>
+          </div>
+          <div class="frow">
+            <div class="fg">
+              <label>Valence/Mood (0–1)</label>
+              <input type="range" id="valence" min="0" max="1" step=".01" value=".5">
+              <span class="rv" id="valenceV">0.50</span>
+            </div>
+            <div class="fg">
+              <label>Tempo (BPM)</label>
+              <input type="range" id="tempo" min="50" max="220" value="120">
+              <span class="rv" id="tempoV">120</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Genre -->
+        <div style="margin-bottom:1.5rem">
+          <div class="fs-tag">🎸 Genre</div>
+          <div class="gchk-wrap" id="genreChecks">
+            <label class="gcl active" data-genre="pop"><input type="checkbox" checked> pop</label>
+            <label class="gcl" data-genre="rap"><input type="checkbox"> rap</label>
+            <label class="gcl" data-genre="dance pop"><input type="checkbox"> dance pop</label>
+            <label class="gcl" data-genre="post-teen pop"><input type="checkbox"> post-teen pop</label>
+            <label class="gcl" data-genre="pop rap"><input type="checkbox"> pop rap</label>
+            <label class="gcl" data-genre="trap"><input type="checkbox"> trap</label>
+            <label class="gcl" data-genre="reggaeton"><input type="checkbox"> reggaeton</label>
+            <label class="gcl" data-genre="trap latino"><input type="checkbox"> trap latino</label>
+            <label class="gcl" data-genre="latin"><input type="checkbox"> latin</label>
+            <label class="gcl active" data-genre="hip hop"><input type="checkbox" checked> hip hop</label>
+          </div>
+        </div>
+
+        <button onclick="runPrediction()" class="btn btn-g"
+                style="width:100%;border-radius:14px;font-size:1rem;padding:14px">
+          ★ Prediksi Sekarang
+        </button>
+      </div>
+
+      <!-- Result -->
+      <div class="rcard">
+        <div class="rtitle">🎯 Hasil Prediksi</div>
+
+        <div class="rcat cat-high" id="rcat">
+          <span class="rcat-emoji" id="rEmoji">🎵</span>
+          <div class="rcat-lbl" id="rLbl">Isi form</div>
+          <div class="rcat-sub" id="rSub">lalu klik Prediksi</div>
+        </div>
+
+        <div class="pbar-wrap">
+          <div class="pbar-labels">
+            <span>Low</span>
+            <span id="probaText" style="color:var(--g)">—</span>
+            <span>High</span>
+          </div>
+          <div class="pbar-track">
+            <div class="pbar-fill" id="probaFill"></div>
+          </div>
+        </div>
+
+        <div class="snum-box">
+          <span class="snum" id="sNum">—</span>
+          <span class="slbl">Estimasi Streams</span>
+        </div>
+
+        <p class="note">
+          ⚠️ Ini adalah simulasi heuristik untuk demonstrasi UI.
+          Untuk prediksi akurat jalankan
+          <code style="color:var(--y)">tubes_improved.ipynb</code>
+          dan gunakan fungsi
+          <code style="color:var(--g)">predict_popularity()</code> /
+          <code style="color:var(--g)">predict_streams()</code>.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ★ Footer ─────────────────────────────────────────────────── -->
+<footer>
+  <div class="foot-logo">♫ Spotify <em>Analyzer</em></div>
+  <p style="opacity:.55;font-size:.88rem;margin-top:.4rem">
+    Data Mining Project · 1,556 Lagu · Logistic Regression · Random Forest · LightGBM
+  </p>
+  <div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap;margin-top:1.25rem">
+    <span class="pill p-g">tubes_improved.ipynb</span>
+    <span class="pill p-pk">Spotify Dataset</span>
+    <span class="pill p-bl">Audio Features</span>
+    <span class="pill p-or">StandardScaler</span>
+    <span class="pill p-y">ast.literal_eval</span>
+  </div>
+</footer>
+
+<script>
+/* ── Stars ────────────────────────────────────────────────────── */
+const SC = ['#FF00AA','#00C850','#00B4FF','#9B00FF','#FF6B00','#FFE500','#FF2D2D'];
+const SP = [
+  {t:'7%',  l:'4%',  z:55, d:0,   c:0},
+  {t:'12%', l:'88%', z:70, d:.6,  c:1},
+  {t:'55%', l:'2%',  z:45, d:1.1, c:2},
+  {t:'72%', l:'91%', z:60, d:1.5, c:3},
+  {t:'32%', l:'94%', z:40, d:.8,  c:4},
+  {t:'82%', l:'8%',  z:50, d:.3,  c:5},
+  {t:'20%', l:'45%', z:30, d:2,   c:0},
+  {t:'90%', l:'55%', z:42, d:.9,  c:6},
+];
+const sf = document.getElementById('starField');
+SP.forEach(p => {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('class','s');
+  svg.setAttribute('width',p.z); svg.setAttribute('height',p.z);
+  svg.setAttribute('viewBox','0 0 100 100');
+  svg.style.top=p.t; svg.style.left=p.l; svg.style.animationDelay=p.d+'s';
+  const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+  path.setAttribute('d','M50 5 L61 35 L95 35 L68 57 L79 91 L50 70 L21 91 L32 57 L5 35 L39 35 Z');
+  path.setAttribute('fill',SC[p.c]); path.setAttribute('stroke','#0A0A0A');
+  path.setAttribute('stroke-width','4');
+  svg.appendChild(path); sf.appendChild(svg);
+});
+
+/* ── Range inputs live display ────────────────────────────────── */
+const rangeMap = {
+  chartPos: {el:'chartPosV', fmt: v=>v},
+  timesC:   {el:'timesCv',   fmt: v=>v},
+  dance:    {el:'danceV',    fmt: v=>parseFloat(v).toFixed(2)},
+  energy:   {el:'energyV',   fmt: v=>parseFloat(v).toFixed(2)},
+  valence:  {el:'valenceV',  fmt: v=>parseFloat(v).toFixed(2)},
+  tempo:    {el:'tempoV',    fmt: v=>v},
+};
+Object.entries(rangeMap).forEach(([id,{el,fmt}]) => {
+  document.getElementById(id).addEventListener('input', function(){
+    document.getElementById(el).textContent = fmt(this.value);
+  });
+});
+
+/* ── Genre checkboxes ─────────────────────────────────────────── */
+document.querySelectorAll('.gcl').forEach(lbl => {
+  lbl.addEventListener('click', () => {
+    const cb = lbl.querySelector('input');
+    cb.checked = !cb.checked;
+    lbl.classList.toggle('active', cb.checked);
+  });
+});
+
+/* ── Chart.js: Genre Doughnut ─────────────────────────────────── */
+new Chart(document.getElementById('genreChart').getContext('2d'), {
+  type:'doughnut',
+  data:{
+    labels:['pop','rap','dance pop','post-teen pop','pop rap','trap','reggaeton','trap latino','latin','hip hop'],
+    datasets:[{
+      data:[312,198,167,134,118,109,95,88,76,71],
+      backgroundColor:['#FF00AA','#FFE500','#00B4FF','#FF6B00','#9B00FF','#FFFFFF','#00C850','#FF2D2D','#E6CF00','#0A0A0A'],
+      borderColor:'#0A0A0A',
+      borderWidth:3,
+    }]
+  },
+  options:{
+    cutout:'62%',
+    plugins:{
+      legend:{position:'bottom',labels:{font:{family:'Nunito',weight:'700',size:11},padding:10,boxWidth:12}}
+    }
+  }
+});
+
+/* ── Chart.js: ROC Curve ──────────────────────────────────────── */
+function rocPoints(auc,n=45){
+  const pts=[{x:0,y:0}];
+  for(let i=1;i<=n;i++){
+    const fpr=i/n;
+    const tpr=Math.min(1,Math.pow(fpr,1/(auc*3.8)));
+    pts.push({x:Math.round(fpr*100)/100, y:Math.round(tpr*100)/100});
+  }
+  pts.push({x:1,y:1});
+  return pts;
+}
+new Chart(document.getElementById('rocChart').getContext('2d'),{
+  type:'scatter',
+  data:{datasets:[
+    {label:'Model (AUC=0.79)',data:rocPoints(.79),borderColor:'#FF00AA',
+     backgroundColor:'rgba(255,0,170,.08)',showLine:true,fill:true,
+     tension:.4,pointRadius:0,borderWidth:3},
+    {label:'Random (AUC=0.50)',data:[{x:0,y:0},{x:1,y:1}],borderColor:'#999',
+     borderDash:[6,3],showLine:true,fill:false,pointRadius:0,borderWidth:2}
+  ]},
+  options:{
+    scales:{
+      x:{min:0,max:1,title:{display:true,text:'False Positive Rate',font:{weight:'700'}}},
+      y:{min:0,max:1,title:{display:true,text:'True Positive Rate',font:{weight:'700'}}}
+    },
+    plugins:{legend:{labels:{font:{family:'Nunito',weight:'700'}}}}
+  }
+});
+
+/* ── Chart.js: Regression Comparison ─────────────────────────── */
+new Chart(document.getElementById('regChart').getContext('2d'),{
+  type:'bar',
+  data:{
+    labels:['R² Score (%)','1 - Median Error %'],
+    datasets:[
+      {label:'Random Forest',data:[91.06,92.95],backgroundColor:'#FFE500',
+       borderColor:'#0A0A0A',borderWidth:3,borderRadius:8},
+      {label:'LightGBM',     data:[86.24,90.13],backgroundColor:'#FFB3E6',
+       borderColor:'#0A0A0A',borderWidth:3,borderRadius:8}
+    ]
+  },
+  options:{
+    plugins:{
+      legend:{labels:{font:{family:'Nunito',weight:'700'}}},
+      tooltip:{callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.raw.toFixed(2)}%`}}
+    },
+    scales:{y:{min:80,max:100,ticks:{callback:v=>v+'%'}}}
+  }
+});
+
+/* ── Intersection Observer (fade-up + metric bars) ────────────── */
+const obs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(!e.isIntersecting) return;
+    e.target.classList.add('vis');
+    e.target.querySelectorAll('.mbar-f[data-w]').forEach(b=>{
+      setTimeout(()=>b.style.width=b.dataset.w+'%', 350);
+    });
+  });
+},{threshold:.12});
+document.querySelectorAll('.fu').forEach(el=>obs.observe(el));
+// Trigger already-visible metric bars
+document.querySelectorAll('.mbar-f[data-w]').forEach(b=>{
+  const r=b.getBoundingClientRect();
+  if(r.top<window.innerHeight) b.style.width=b.dataset.w+'%';
+});
+
+/* ── Prediction logic ─────────────────────────────────────────── */
+function sig(x){return 1/(1+Math.exp(-x));}
+
+function computeProb(f){
+  let s=0;
+  s+=((200-f.chartPos)/200)*2.0;
+  s+=Math.min(f.timesC/30,1)*1.2;
+  const lf=Math.log10(Math.max(f.followers,1));
+  s+=Math.min((lf-3)/5,1)*0.9;
+  s+=f.dance*.7; s+=f.energy*.5; s+=f.valence*.4;
+  s+=(1-Math.abs(f.tempo-115)/115)*.3;
+  const pop=['pop','dance pop','post-teen pop'];
+  const rap=['rap','hip hop','pop rap','trap'];
+  const lat=['reggaeton','trap latino','latin'];
+  f.genres.forEach(g=>{
+    if(pop.includes(g)) s+=.55;
+    if(rap.includes(g)) s+=.45;
+    if(lat.includes(g)) s+=.3;
+  });
+  s+=Math.max(0,(f.year-2017)/7)*.4;
+  return sig((s-4.8)*1.6);
+}
+
+function estStreams(f,p){
+  const byPos=Math.exp((200-f.chartPos)/200*3)*1_800_000;
+  const byChart=f.timesC*420_000;
+  const byFoll=Math.log10(Math.max(f.followers,1))*650_000;
+  const pm=.35+p*1.3;
+  const jitter=.87+Math.sin(f.chartPos*f.timesC+p*10)*.13;
+  return Math.max(400_000,Math.round((byPos+byChart+byFoll)*pm*jitter));
+}
+
+function runPrediction(){
+  const genres=[...document.querySelectorAll('.gcl.active')].map(l=>l.dataset.genre);
+  const f={
+    chartPos:+document.getElementById('chartPos').value,
+    timesC:+document.getElementById('timesC').value,
+    followers:+document.getElementById('followers').value,
+    year:+document.getElementById('relYear').value,
+    dance:+document.getElementById('dance').value,
+    energy:+document.getElementById('energy').value,
+    valence:+document.getElementById('valence').value,
+    tempo:+document.getElementById('tempo').value,
+    genres,
+  };
+  const prob=computeProb(f);
+  const isHigh=prob>=.5;
+  const streams=estStreams(f,prob);
+
+  const cat=document.getElementById('rcat');
+  cat.className='rcat '+(isHigh?'cat-high':'cat-low');
+  document.getElementById('rEmoji').textContent=isHigh?'🔥':'📉';
+  document.getElementById('rLbl').textContent=isHigh?'HIGH Popularity':'LOW Popularity';
+  document.getElementById('rSub').textContent='Probabilitas High: '+(prob*100).toFixed(1)+'%';
+  document.getElementById('probaFill').style.width=(prob*100)+'%';
+  document.getElementById('probaText').textContent=(prob*100).toFixed(1)+'%';
+  document.getElementById('sNum').textContent=streams.toLocaleString('id-ID');
+
+  // Scroll result into view on mobile
+  if(window.innerWidth<680)
+    document.getElementById('rcat').scrollIntoView({behavior:'smooth',block:'center'});
+}
+</script>
+</body>
+</html>
